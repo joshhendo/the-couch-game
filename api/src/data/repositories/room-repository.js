@@ -17,6 +17,8 @@ function createRoom(code, couch_size) {
         yield connection.setex(`ROOM_CODE_${code}`, constants_1.DAY_IN_SECONDS, JSON.stringify({
             state: 'pending',
             couch_size,
+            empty_spot: null,
+            last_selected_id: null,
         }));
         websocket_controller_1.roomChanged(code);
     });

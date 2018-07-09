@@ -8,12 +8,15 @@ export interface Room {
   state: 'pending' | 'started' | 'finished';
   couch_size: number;
   empty_spot?: number;
+  last_selected_id?: number;
 }
 
 export async function createRoom(code: string, couch_size: number) {
   await connection.setex(`ROOM_CODE_${code}`, DAY_IN_SECONDS, JSON.stringify( {
     state: 'pending',
     couch_size,
+    empty_spot: null,
+    last_selected_id: null,
   }));
 
   roomChanged(code);

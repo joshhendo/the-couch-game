@@ -15,9 +15,9 @@ export class HomeScreen extends React.Component<any, any> {
     let formToShow = <WelcomeForm setScreen={(s: string) => this.setScreen(s)} goBack={() => this.goBack()}/>;
 
     if (this.state.screen === 'new') {
-      formToShow = <NewRoomForm goBack={() => this.goBack()} startGame={(code: string, name: string) => this.startGame(code, name)}/>;
+      formToShow = <NewRoomForm goBack={() => this.goBack()} startGame={this.startGame.bind(this)}/>;
     } else if (this.state.screen === 'join') {
-      formToShow = <JoinRoomForm goBack={() => this.goBack()} startGame={(code: string, name: string) => this.startGame(code, name)}/>;
+      formToShow = <JoinRoomForm goBack={() => this.goBack()} startGame={this.startGame.bind(this)}/>;
     }
 
     return (
@@ -52,8 +52,8 @@ export class HomeScreen extends React.Component<any, any> {
     }
   }
 
-  startGame(code: string, name: string) {
-    this.props.startGame(code, name);
+  startGame(code: string, name: string, id: number) {
+    this.props.startGame(code, name, id);
   }
 }
 
@@ -132,7 +132,6 @@ class JoinRoomForm extends React.Component<any, any> {
     const code = this.state.code;
     const startGame = this.props.startGame;
 
-    alert('A name was submitted: ' + name);
     axios.post(`http://${API_URL}/rooms/${code}/participants`, {
       name: this.state.name,
     })

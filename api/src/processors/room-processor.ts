@@ -47,7 +47,9 @@ export async function getRoomState(code: string) {
   }
 
   if (room.state !== 'pending') {
-    const positionTurn = (room.empty_spot + 1) % participants.length + 1;
+    const spots = participants.length + 1;
+    const positionTurn = room.empty_spot < spots-1 ? room.empty_spot +1 : 0;
+
     for (let i = 0; i < participants.length; i++) {
       // Determine if they are on couch
       const on_couch = participants[i].position < room.couch_size;
@@ -99,7 +101,8 @@ export async function startRoom(code: string) {
   participants = _.shuffle(participants);
   let team = 0;
   for (const participant of participants) {
-    participant.team = team++ % 2;
+    participant.team = team % 2;
+    team++;
   }
 
   // Randomly assign everyone an ID of someone else and assign positions
@@ -121,5 +124,6 @@ export async function startRoom(code: string) {
 
   await updateRoom(code, room);
   await updateParticipants(code, participants);
+
   roomChanged(code);
 }
