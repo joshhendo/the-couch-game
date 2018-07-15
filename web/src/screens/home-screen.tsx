@@ -67,8 +67,9 @@ class WelcomeForm extends React.Component<any, any> {
       <span>
         <p>Welcome to <em>The Couch Game</em>.</p>
         <p>Please select if you'd like to create a new game or join an existing game.</p>
-        <button type="button" name="new" onClick={(event) => this.handleChange(event)}>New Game</button>
-        <button type="button" name="join" onClick={(event) => this.handleChange(event)}>Join Game</button>
+        <button className="btn-block" type="button" name="new" onClick={(event) => this.handleChange(event)}>New Game</button>
+        <br />
+        <button className="btn-block" type="button" name="join" onClick={(event) => this.handleChange(event)}>Join Game</button>
       </span>
     )
   }
@@ -81,14 +82,74 @@ class WelcomeForm extends React.Component<any, any> {
 class NewRoomForm extends React.Component<any, any> {
   constructor(props: any) {
     super(props);
+    this.state = {
+      name: '',
+      size: 3,
+    };
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
   }
 
   public render() {
     return (
-      <span>
-        TODO!!
-      </span>
+      <div>
+        <form onSubmit={this.handleSubmit}>
+          <label>
+            Name: <br/>
+            <input className="form-control" name="name" type="text" value={this.state.name} onChange={this.handleChange}/> <br/>
+            Couch Size: <br/>
+            <input className="form-control" name="size" type="text" value={this.state.size} onChange={this.handleChange}/>
+          </label>
+          <br />
+          <input className="btn-block" type="submit" value="Submit"/>
+        </form>
+
+        <br />
+        <button className="btn-block" onClick={this.props.goBack}>Go Back</button>
+      </div>
     )
+  }
+
+  private handleChange(event: any) {
+    let value = event.target.value;
+    if (event.target.name === 'size') {
+      value = value.replace(/[^0-9]/g, '');
+      if (value.length > 0) {
+        if (+value > 10) {
+          value = '10';
+        }
+        if (+value < 2) {
+          value = '2';
+        }
+      }
+    }
+    this.setState({[event.target.name]: value});
+  }
+
+  private handleSubmit(event: any) {
+    event.preventDefault();
+    const name = this.state.name;
+    const size = this.state.size;
+    const startGame = this.props.startGame;
+    let code = '';
+
+    axios.post(`http://${API_URL}/rooms`, {
+      couch_size: size
+    })
+      .then(function (response: any) {
+        code = response.data.room_code;
+        return axios.post(`http://${API_URL}/rooms/${code}/participants`, {
+          name: name,
+        })
+      })
+      .then(function (response: any) {
+        startGame(code, name, response.data.id);
+      })
+      .catch(function (error: any) {
+        alert(`An error occurred :(`);
+        alert(error);
+      })
   }
 }
 
@@ -110,20 +171,26 @@ class JoinRoomForm extends React.Component<any, any> {
         <form onSubmit={this.handleSubmit}>
           <label>
             Name: <br/>
-            <input name="name" type="text" value={this.state.name} onChange={this.handleChange}/> <br/> <br/>
+            <input className="form-control" name="name" type="text" value={this.state.name} onChange={this.handleChange}/> <br/>
             Room Code: <br/>
-            <input name="code" type="text" value={this.state.code} onChange={this.handleChange}/>
+            <input className="form-control" name="code" type="text" value={this.state.code} onChange={this.handleChange}/>
           </label>
-          <input type="submit" value="Submit"/>
+          <br />
+          <input className="btn-block" type="submit" value="Submit"/>
         </form>
 
-        <button onClick={this.props.goBack}>Go Back</button>
+        <br />
+        <button className="btn-block" onClick={this.props.goBack}>Go Back</button>
       </div>
     );
   }
 
   private handleChange(event: any) {
-    this.setState({[event.target.name]: event.target.value});
+    let value = event.target.value;
+    if (event.target.name === 'code') {
+      value = value.toUpperCase();
+    }
+    this.setState({[event.target.name]: value});
   }
 
   private handleSubmit(event: any) {

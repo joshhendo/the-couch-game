@@ -9,6 +9,7 @@ export interface Room {
   couch_size: number;
   empty_spot?: number;
   last_selected_id?: number;
+  payload?: any;
 }
 
 export async function createRoom(code: string, couch_size: number) {

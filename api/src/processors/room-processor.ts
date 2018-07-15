@@ -1,17 +1,17 @@
 import * as roomRepository from "../data/repositories/room-repository";
-import * as shortid from "shortid";
+const generate = require('nanoid/generate');
 import {
   addParticipantForRoom,
-  getParticipantsForRoom,
+  getParticipantsForRoom, Participant,
   updateParticipants
 } from "../data/repositories/participant-repository";
 import * as _ from 'lodash';
 import {roomChanged} from "../controllers/websocket-controller";
-import {updateRoom} from "../data/repositories/room-repository";
+import {Room, updateRoom} from "../data/repositories/room-repository";
+
 
 export async function createRoom(size: number) {
-  const code = shortid.generate();
-
+  const code = generate('ABCDEFGHIJKLMNOPQRTVWXYZ', 4);
   await roomRepository.createRoom(code, size);
 
   return code;
@@ -35,10 +35,12 @@ export async function addParticipant(code: string, name: string) {
   return participant;
 }
 
-export async function getRoomState(code: string) {
+export type RoomAndParticipants = Room & {participants: Participant[]};
+
+export async function getRoomState(code: string): Promise<RoomAndParticipants> {
   const room = await roomRepository.getRoom(code);
   if (room === null) {
-    return room;
+    return null;
   }
 
   const participants = await getParticipantsForRoom(code);
@@ -61,6 +63,22 @@ export async function getRoomState(code: string) {
       participants[i].state = {
         on_couch,
         turn
+      }
+    }
+
+    // Determine if the game is over
+    const participantsOnCouch = _.filter(participants, (p) => p.state.on_couch);
+
+    if (participantsOnCouch.length === room.couch_size) {
+      for (const team of [0,1]) {
+        const allSameTeam = _.every(participantsOnCouch, (p) => p.team === team);
+
+        if (allSameTeam) {
+          room.state = 'finished';
+          room.payload = {
+            winners: _.filter(participants, (p) => p.team === team),
+          }
+        }
       }
     }
   }
@@ -121,6 +139,34 @@ export async function startRoom(code: string) {
       participants[i].position = i+1;
     }
   }
+
+  await updateRoom(code, room);
+  await updateParticipants(code, participants);
+
+  roomChanged(code);
+}
+
+export async function selectParticipant(code: string, selectedFakeId: number) {
+  const {participants, ...room} = await getRoomState(code);
+  const participantReal = _.find(participants, (p) => p.fake_id === selectedFakeId);
+
+  room.last_selected_id = selectedFakeId;
+
+  // Move whoever has the selected Fake ID to the empty spot
+  const newEmptySpot = participantReal.position;
+  participantReal.position = room.empty_spot;
+  room.empty_spot = newEmptySpot;
+
+  // Identify who to swap with: the person to the right of the person who just moved
+  let participantToSwapWithPosition = participantReal.position+1;
+  if (participantToSwapWithPosition > participants.length) {
+    participantToSwapWithPosition = 0;
+  }
+
+  const participantToSwapWith = _.find(participants, (p) => p.position === participantToSwapWithPosition);
+
+  participantReal.fake_id = participantToSwapWith.fake_id;
+  participantToSwapWith.fake_id = selectedFakeId;
 
   await updateRoom(code, room);
   await updateParticipants(code, participants);
