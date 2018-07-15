@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "compile": "tsc",
+    "start": "npm install && tsc && node server.js",
     "start-debug": "npm install && tsc && concurrently --kill-others \"tsc -w\" \"nodemon --inspect=0.0.0.0:9229 server.js\""
   },
   "author": "",

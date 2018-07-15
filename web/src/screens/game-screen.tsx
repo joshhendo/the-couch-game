@@ -179,7 +179,7 @@ export class GameScreen extends React.Component<any, GameScreenState> {
       loading: true,
     });
 
-    axios.put(`http://${API_URL}/rooms/${this.state.code}`, {
+    axios.put(`/api/rooms/${this.state.code}`, {
       state: 'started'
     })
       .catch(function (error: any) {
